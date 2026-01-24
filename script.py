@@ -3,7 +3,9 @@ import time
 import random
 import subprocess
 import sys
+import threading
 from pathlib import Path
+import pyautogui
 
 # Windows API constants for system wake-lock
 ES_CONTINUOUS = 0x80000000
@@ -58,101 +60,133 @@ def find_brave_executable():
     return None
 
 
-def open_url_in_brave(url, brave_path):
+def focus_brave_window():
     """
-    Open a URL in Brave browser using a new tab.
-    
-    Args:
-        url (str): Website URL to open
-        brave_path (str): Path to brave.exe
+    Focus the Brave browser window.
     """
     try:
-        # Open URL in new tab (--new-tab flag)
-        subprocess.Popen([brave_path, "--new-tab", url])
-        print(f"[↻] Opened: {url}")
-        time.sleep(3)  # Wait for page to load
-    except Exception as e:
-        print(f"[✗] Error opening {url}: {e}")
-
-
-def close_brave_tab():
-    """
-    Close the current Brave tab using Alt+F4 (closes window) or Ctrl+W (closes tab).
-    Uses Ctrl+W which is more reliable for closing individual tabs.
-    """
-    try:
-        time.sleep(0.5)
-        # Use ctypes to send Ctrl+W command to close tab
-        # This is done by directly using keyboard API
-        import win32api
-        import win32con
-        
-        # Get the foreground window (Brave)
+        # Get the foreground window
         hwnd = ctypes.windll.user32.GetForegroundWindow()
-        
-        # Send Ctrl+W using PostMessage
-        ctypes.windll.user32.PostMessageW(hwnd, win32con.WM_KEYDOWN, win32con.VK_W, 0)
-        ctypes.windll.user32.PostMessageW(hwnd, win32con.WM_KEYDOWN, win32con.VK_CONTROL, 0)
-        time.sleep(0.1)
-        ctypes.windll.user32.PostMessageW(hwnd, win32con.WM_KEYUP, win32con.VK_W, 0)
-        ctypes.windll.user32.PostMessageW(hwnd, win32con.WM_KEYUP, win32con.VK_CONTROL, 0)
-        
-        print(f"[✗] Closed tab")
-        time.sleep(1)
+        # Set it to foreground
+        ctypes.windll.user32.SetForegroundWindow(hwnd)
+        time.sleep(0.2)
     except Exception as e:
-        # Fallback: use simpler key press approach
-        try:
-            # Simulate Ctrl+W key press
-            press_ctrl_w()
-            print(f"[✗] Closed tab (fallback)")
-            time.sleep(1)
-        except Exception as e2:
-            print(f"[!] Could not close tab: {e2}")
+        print(f"[!] Could not focus window: {e}")
 
 
-def press_ctrl_w():
+def press_ctrl_tab():
     """
-    Press Ctrl+W using ctypes keyboard simulation.
+    Press and release Ctrl+Tab quickly.
     """
-    # Ctrl key code
     VK_CONTROL = 0x11
-    VK_W = 0x57
+    VK_TAB = 0x09
     
     # Press Ctrl
     ctypes.windll.user32.keybd_event(VK_CONTROL, 0, 0, 0)
     time.sleep(0.05)
     
-    # Press W
-    ctypes.windll.user32.keybd_event(VK_W, 0, 0, 0)
+    # Press Tab
+    ctypes.windll.user32.keybd_event(VK_TAB, 0, 0, 0)
     time.sleep(0.05)
     
-    # Release W
-    ctypes.windll.user32.keybd_event(VK_W, 0, 2, 0)
+    # Release Tab
+    ctypes.windll.user32.keybd_event(VK_TAB, 0, 2, 0)
     time.sleep(0.05)
     
     # Release Ctrl
     ctypes.windll.user32.keybd_event(VK_CONTROL, 0, 2, 0)
+    time.sleep(0.1)
+    
+    print("[↻] Pressed Ctrl+Tab")
 
 
-def reload_url_in_brave(url, brave_path, is_first=False):
+def press_ctrl_r():
     """
-    Close previous tab (if not first) and open a new URL in Brave.
+    Press and release Ctrl+R to reload the page.
+    """
+    VK_CONTROL = 0x11
+    VK_R = 0x52
+    
+    # Press Ctrl
+    ctypes.windll.user32.keybd_event(VK_CONTROL, 0, 0, 0)
+    time.sleep(0.05)
+    
+    # Press R
+    ctypes.windll.user32.keybd_event(VK_R, 0, 0, 0)
+    time.sleep(0.05)
+    
+    # Release R
+    ctypes.windll.user32.keybd_event(VK_R, 0, 2, 0)
+    time.sleep(0.05)
+    
+    # Release Ctrl
+    ctypes.windll.user32.keybd_event(VK_CONTROL, 0, 2, 0)
+    time.sleep(0.1)
+    
+    print("[↻] Pressed Ctrl+R (reload)")
+
+
+def open_urls_in_brave(websites, brave_path):
+    """
+    Open all websites in Brave browser (each in a new tab).
     
     Args:
-        url (str): Website URL to open
+        websites (list): List of URLs to open
         brave_path (str): Path to brave.exe
-        is_first (bool): Whether this is the first website
     """
     try:
-        # Close previous tab if not the first website
-        if not is_first:
-            close_brave_tab()
+        # Open first URL
+        subprocess.Popen([brave_path, websites[0]])
+        print(f"[•] Opened Brave with: {websites[0]}")
+        time.sleep(3)
         
-        # Open new URL
-        open_url_in_brave(url, brave_path)
-        
+        # Open remaining URLs in new tabs
+        for url in websites[1:]:
+            subprocess.Popen([brave_path, "--new-tab", url])
+            print(f"[•] Opened in new tab: {url}")
+            time.sleep(1)
+    
     except Exception as e:
-        print(f"[✗] Error reloading {url}: {e}")
+        print(f"[✗] Error opening URLs: {e}")
+
+
+def reload_cycle(num_cycles=3):
+    """
+    Perform the reload cycle: Ctrl+Tab followed by Ctrl+R, repeated num_cycles times.
+    
+    Args:
+        num_cycles (int): Number of times to repeat the cycle
+    """
+    for cycle in range(num_cycles):
+        print(f"\n[•] Cycle {cycle + 1}/{num_cycles}")
+        
+        # Press Ctrl+Tab (switch to next tab)
+        press_ctrl_tab()
+        time.sleep(0.3)
+        
+        # Press Ctrl+R (reload)
+        press_ctrl_r()
+        time.sleep(1)
+
+
+def cursor_movement_thread():
+    """
+    Background thread for continuous cursor movement.
+    Prevents screen from going to sleep by moving the cursor randomly.
+    """
+    screen_width, screen_height = pyautogui.size()
+    
+    try:
+        while True:
+            # Generate random coordinates
+            x = random.randint(0, screen_width)
+            y = random.randint(0, screen_height)
+            
+            # Move the cursor with animation
+            pyautogui.moveTo(x, y, duration=0.2)
+    
+    except Exception as e:
+        print(f"[!] Cursor movement error: {e}")
 
 
 def main():
@@ -160,13 +194,13 @@ def main():
     
     # Configuration: Add your websites here
     websites = [
-        "https://www.fiverr.com/sellers/uzair_programs/edit",
         "https://www.freelancer.pk/u/UzairArain554",
         "https://www.upwork.com/freelancers/~016bc28994db577ad5",
+        "https://www.fiverr.com/sellers/uzair_programs/edit",
     ]
     
-    min_interval = 100  # seconds
-    max_interval = 500  # seconds
+    min_interval = 120  # seconds (2 minutes)
+    max_interval = 180  # seconds (3 minutes)
     
     # Find Brave browser
     brave_path = find_brave_executable()
@@ -183,34 +217,41 @@ def main():
     # Enable system wake-lock
     keep_system_awake(True)
     
+    # Start cursor movement in a background thread (daemon thread)
+    cursor_thread = threading.Thread(target=cursor_movement_thread, daemon=True)
+    cursor_thread.start()
+    print("[•] Cursor movement thread started")
+    
+    # Open all websites
+    open_urls_in_brave(websites, brave_path)
+    time.sleep(2)
+    
+    # Focus Brave window
+    focus_brave_window()
+    
     print("[•] Application started. Press Ctrl+C to stop.")
     print(f"[•] Reload interval: {min_interval}–{max_interval} seconds")
     print()
-    
-    is_first_iteration = True
     
     try:
         while True:
             # Randomly select interval
             interval = random.randint(min_interval, max_interval)
-            print(f"[⏱] Next reload cycle in {interval} seconds...")
+            print(f"\n[⏱] Next reload cycle in {interval} seconds...")
             
             # Wait for the interval
             time.sleep(interval)
             
+            # Focus Brave window
+            focus_brave_window()
+            
             print(f"[•] Starting reload cycle...")
             
-            # Reload all websites one by one
-            for idx, selected_url in enumerate(websites):
-                is_first_tab = is_first_iteration and (idx == 0)
-                reload_url_in_brave(selected_url, brave_path, is_first=is_first_tab)
-                time.sleep(2)  # Delay between reloads
-            
-            is_first_iteration = False
+            # Perform reload cycle 3 times
+            reload_cycle(num_cycles=3)
             
             # Refresh system wake-lock to ensure it stays active
             keep_system_awake(True)
-            print()
     
     except KeyboardInterrupt:
         print("\n[•] Stopping application...")
