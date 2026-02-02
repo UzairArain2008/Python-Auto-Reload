@@ -3,7 +3,7 @@ import random
 import sys
 import threading
 
-from functions import (
+from core.functions import (
     keep_system_awake,
     find_brave_executable,
     focus_brave_window,
@@ -74,16 +74,16 @@ keep_awake_input = input(
 ).strip().lower()
 keep_awake = keep_awake_input == "true"
 
-print("[•] Default websites: Fiverr, Upwork, Freelancer")
+print("[•] Default websites are: Fiverr, Upwork, Freelancer")
 change_links = input(
-    "[•] Change websites? (T/F): "
+    "[•] Want to Change websites? (T/F): "
 ).strip().upper()
 
 websites = default_websites
 
 if change_links == "T":
     try:
-        count = int(input("[•] How many websites: "))
+        count = int(input("[•] How many websites You want to Refresh (ex: 2): "))
         if count <= 0:
             raise ValueError
 
