@@ -118,12 +118,10 @@ def open_urls_in_brave(websites, brave_path):
         brave_path (str): Path to brave.exe
     """
     try:
-        # Open first URL
         subprocess.Popen([brave_path, websites[0]])
         print(f"[•] Opened Brave with: {websites[0]}")
         time.sleep(3)
         
-        # Open remaining URLs in new tabs
         for url in websites[1:]:
             subprocess.Popen([brave_path, "--new-tab", url])
             print(f"[•] Opened in new tab: {url}")
@@ -152,14 +150,11 @@ def cursor_movement_thread():
     
     try:
         while True:
-            # Generate random coordinates
             x = random.randint(0, screen_width)
             y = random.randint(0, screen_height)
             
-            # Move the cursor with animation
             pyautogui.moveTo(x, y, duration=0.25)
             
-            # Wait for a random interval before the next move
             time.sleep(random.uniform(0.5, 2.0))
     
     except Exception as e:

@@ -61,7 +61,6 @@ def main(websites, num_reload_cycles, keep_awake):
         sys.exit(1)
 
 
-# ================= USER INPUT =================
 
 default_websites = [
     "https://www.freelancer.pk/dashboard",
