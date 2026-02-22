@@ -7,7 +7,6 @@ from datetime import datetime
 import argparse
 from colorama import init, Fore, Style
 
-# Initialize colorama
 init(autoreset=True)
 
 from .core.functions import (
@@ -19,11 +18,8 @@ from .core.functions import (
     cursor_movement_thread,
 )
 
-VERSION = "0.1.0"
+VERSION = "1.2.1"
 
-# -----------------------------
-# Terminal utilities & banner
-# -----------------------------
 def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -34,9 +30,6 @@ def show_banner():
     print(Fore.MAGENTA + f"    Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print(Fore.CYAN + Style.BRIGHT + "="*50 + "\n")
 
-# -----------------------------
-# Logging helpers
-# -----------------------------
 def log_info(msg):
     print(Fore.BLUE + "[INFO] " + Style.RESET_ALL + msg)
 
@@ -49,9 +42,6 @@ def log_warning(msg):
 def log_error(msg):
     print(Fore.RED + "[ERR ] " + Style.RESET_ALL + msg)
 
-# -----------------------------
-# User configuration prompts
-# -----------------------------
 def prompt_user_config():
     default_websites = [
         "https://www.freelancer.pk/dashboard",
@@ -87,9 +77,6 @@ def prompt_user_config():
 
     return websites, keep_awake, min_interval, max_interval
 
-# -----------------------------
-# Main logic
-# -----------------------------
 def main(websites, keep_awake, min_interval=120, max_interval=180):
     num_reload_cycles = len(websites)
     brave_path = find_brave_executable()
@@ -137,9 +124,6 @@ def main(websites, keep_awake, min_interval=120, max_interval=180):
         keep_system_awake(False)
         sys.exit(1)
 
-# -----------------------------
-# CLI entry point
-# -----------------------------
 def main_entry():
     parser = argparse.ArgumentParser(
         prog="autoreload",
